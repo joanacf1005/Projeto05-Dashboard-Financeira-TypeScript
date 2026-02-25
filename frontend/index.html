@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="module" src="../build/main.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <title>Dashboard Financeiro Pessoal</title>
+</head>
+<body>
+    <aside class="sidebar">
+        <p class="logo">Minhas <span class="financas">Finanças</span></p>
+        <menu class="menu">
+            <ul class="lista-de-servicos">
+                <div class="containers-services first">
+                    <div class="list-icons"></div>
+                    <li class="menu-itens">Dashboard</li>
+                </div>
+                <div class="containers-services">
+                    <div class="list-icons"></div>
+                    <li class="menu-itens">Relatórios</li>
+                </div>
+                <div class="containers-services">
+                    <div class="list-icons"></div>
+                    <li class="menu-itens">Transações</li>
+                </div>
+                <div class="containers-services">
+                    <div class="list-icons"></div>
+                    <li class="menu-itens">Orçamentos</li>
+                </div>
+            </ul>
+        </menu>
+    </aside>
+
+    <div class="overlay" id="overlay"></div>
+
+    <header class="header">
+        <button class="hamburger" id="hamburger">☰</button>
+        <div class="titulo-container">
+            <h2 class="titulo">Overview</h2>
+            <p class="subtitle">Bem vindo de volta, aqui está o que acontece com o seu dinheiro</p>
+        </div>
+        <div class="header-actions">
+            <div class="calendario">Jan 1- Jan 31, 2026</div>
+            <button class="exportar">Exportar</button>
+        </div>
+    </header>
+
+    <main class="main">
+        <section class="cards">
+            <div class="cards-container">
+                <div class="card">
+                    <div class="titulo-card">Balanço Total</div>
+                    <div class="balanco-total"></div>
+                    <!-- <div class="informacao">+ 2.4% em relação ao mês anterior</div> -->
+                </div>
+                <div class="card">
+                    <div class="titulo-card">Renda Total</div>
+                    <div class="receita-valor"></div>
+                    <!-- <div class="informacao">+ 12 Novas fontes</div> -->
+                </div>
+                <div class="card">
+                    <div class="titulo-card">Total de Despesas</div>
+                    <div class="despesas-valor"></div>
+                    <!-- <div class="informacao expense-color">- 5% redução</div> -->
+                </div>
+            </div>
+        </section>
+        <section class="transacoes">
+            <div class="nova-transacao">
+                <div class="titulo-nova-transacao-container">
+                    <p class="titulo-nova-transacao">Nova Transação</p>
+                    <button class="nova-transacao-icon">+</button>                   
+                </div>
+                <div class="form-container">
+                    <div class="description-form">
+                        <form action="" class="receitas"></form>
+                        <label for="descricao">Descrição</label>
+                        <input type="text" id="descricao" placeholder="ex. Renda mensal">
+                    </div>
+                    <div class="qtd-tipo-transacao-container">
+                        <div class="qtd-container">
+                            <label for="quantidade">Valor</label>
+                            <input type="number" id="quantidade" placeholder="ex. 1000">
+                        </div>
+                        <div class="tipo-transacao-container">
+                            <label for="tipo-transacao">Tipo</label>
+                            <select name="tipo-transacao" id="tipo-transacao">
+                                <option value="" selected disabled></option>
+                                <option value="receita">Receita</option>
+                                <option value="despesa">Despesa</option>
+                            </select>
+
+                        </div>
+                    </div>
+                </div>
+                <div class="categoria-container">
+                    <button type="button" class="categorias" data-value="Comida">Comida</button>
+                    <button type="button" class="categorias" data-value="Faturas">Faturas</button>
+                    <button type="button" class="categorias" data-value="Salário">Salário</button>
+                </div>
+
+                <div class="categoria-container">
+                    <button type="button" class="categorias" data-value="Entretenimento">Entretenimento</button>
+                    <button type="button" class="categorias" data-value="Lazer">Lazer</button>
+                    <button type="button" class="categorias" data-value="Outros">Outros</button>
+                </div>
+
+                <input type="hidden" name="categoria" id="categoria-selecionada">
+
+                <button class="adiciona-historia">
+                    <div class="btn-container">
+                        <div class="btn-icon">+</div>
+                        <p class="btn-text">Adicionar ao histórico</p>
+                    </div>
+                </button>
+            </div>
+            <article class="historico">
+                <h3 class="sub-titulo-historico">Histórico recente</h3>                    
+                <div class="table-container">
+                    <div class="cabecalho-tabela">
+                        <span>TRANSAÇÃO</span>
+                        <span>CATEGORIA</span>
+                        <span>DATA</span>
+                        <span>VALOR</span>
+                    </div>
+
+                    <ul class="lista-transacoes"></ul>
+
+                    <!-- <div class="rodape-tabela">
+                        <a href="#" class="link-extrato">VER EXTRATO COMPLETO &rarr;</a>
+                    </div> -->
+
+                </div>
+            </article>
+        
+            <div class="popup-transacao" id="popup-transacao" style="display: none;">
+                <div class="popup-content">
+                    <h3>Editar Transação</h3>
+
+                    <label>Descrição:</label>
+                    <input type="text" id="popup-descricao">
+
+                    <label>Valor:</label>
+                    <input type="number" id="popup-quantidade">
+
+                    <label for="popup-categoria">Categoria:</label>
+                        <select id="popup-categoria">
+                            <option value="Comida">Comida</option>
+                            <option value="Faturas">Faturas</option>
+                            <option value="Salário">Salário</option>
+                            <option value="Entretenimento">Entretenimento</option>
+                            <option value="Lazer">Lazer</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+
+                    <label>Tipo:</label>
+                        <select id="popup-tipo">
+                            <option value="receita">Receita</option>
+                            <option value="despesa">Despesa</option>
+                        </select>
+
+                    <button id="salvar-popup">Guardar</button>
+                    <button id="fechar-popup">Sair</button>
+                </div>
+            </div>
+
+            </div>
+
+        </section>
+    </main>
+    <footer class="footer">
+        <p>© 2026 Minhas Finanças. Todos os direitos reservados.</p>
+    </footer>
+</body>
+</html>
