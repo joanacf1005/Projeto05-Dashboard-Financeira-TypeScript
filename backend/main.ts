@@ -1,225 +1,175 @@
-interface Transacao {
-        descricao: string;
-        quantidade: number;
-        tipo: "receita" | "despesa";
-        categoria: string;
-        data: string | Date;
-    }
+import { Transacao } from "./modules/types.js";
+import { carregarTransacoes, salvarTransacoes } from "./modules/storage.js";
+import { inicializarPopUp } from "./modules/editTransaction.js";
+import { calcularReceitas, calcularDespesas, calcularSaldoTotal, mostrarReceitas, mostrarDespesas, mostrarSaldoTotal} from "./modules/transactions.js";
 
-const tipoTransacaoValue = document.getElementById("tipo-transacao") as HTMLSelectElement;
 
-tipoTransacaoValue.addEventListener("change", () => {
-    console.log(tipoTransacaoValue.value);
-});
+// Captura de elementos
 
-const categoriaBotao = document.querySelectorAll<HTMLButtonElement>(".categorias");
+const tipoTransacaoSelect = document.getElementById("tipo-transacao") as HTMLSelectElement;
+const categoriaBotoes = document.querySelectorAll<HTMLButtonElement>(".categorias");
 const inputHidden = document.getElementById("categoria-selecionada") as HTMLInputElement;
+const listaTransacoes = document.querySelector(".lista-transacoes") as HTMLUListElement;
+
+if (!tipoTransacaoSelect || !inputHidden || !listaTransacoes) {
+  throw new Error("Elementos essenciais do formulário não encontrados.");
+}
 
 let categoriaSelecionada = "";
 
-categoriaBotao.forEach(botao => {
-    botao.addEventListener("click", () => {
-        categoriaBotao.forEach(b => b.classList.remove("ativa"));
-        botao.classList.add("ativa");
-        if(botao.dataset.value){
-            categoriaSelecionada = botao.dataset.value;
-            inputHidden.value = categoriaSelecionada;
-            console.log("Categoria selecionada:", categoriaSelecionada);
-        }
-        
-    })
-})
 
-const listaTransacoes = document.querySelector(".lista-transacoes") as HTMLUListElement;
+// Eventos de seleção de categoria
+
+categoriaBotoes.forEach((botao) => {
+  botao.addEventListener("click", () => {
+    categoriaBotoes.forEach((b) => b.classList.remove("ativa"));
+
+    botao.classList.add("ativa");
+
+    const valor = botao.dataset.value;
+    if (!valor) return;
+
+    categoriaSelecionada = valor;
+    inputHidden.value = categoriaSelecionada;
+    console.log("Categoria selecionada:", categoriaSelecionada);
+  });
+});
+
+// Tipo de transação
+tipoTransacaoSelect.addEventListener("change", () => {
+  console.log("Tipo selecionado:", tipoTransacaoSelect.value);
+});
 
 
-// 5) Estado principal
+// Estado principal
+
 let transacoes: Transacao[] = carregarTransacoes();
 console.log("Transações carregadas:", transacoes);
 
-const abrirPopUp = inicializarPopUp(
-    transacoes,
-    renderizarTransacoes,
-    atualizarDados
-);
+const abrirPopUp = inicializarPopUp(transacoes, renderizarTransacoes, atualizarDados);
 
-//função para re-renderizar a lista com botão para apagar
-function renderizarTransacoes() {
-    listaTransacoes.innerHTML = "";
 
-    transacoes.forEach((transacao: Transacao, index: number) => {
+// Renderizar transações
 
-        const transacaoListItem = document.createElement("li");
-        transacaoListItem.classList.add("transacao-Item");
+function renderizarTransacoes(): void {
+  listaTransacoes.innerHTML = "";
 
-        transacaoListItem.innerHTML =
-            '<span>' + transacao.descricao + '</span>' +
-            '<span>' + transacao.categoria + '</span>' +
-            '<span>' + new Date(transacao.data).toLocaleDateString() + '</span>' +
-            '<span>' + transacao.quantidade + " €" + '</span>';
+  transacoes.forEach((transacao, index) => {
+    const li = document.createElement("li");
+    li.classList.add("transacao-Item");
 
-        const botaoApagar = document.createElement("button");
-        botaoApagar.textContent = "x";
-        botaoApagar.classList.add("botao-apagar");
+    li.innerHTML =
+      `<span>${transacao.descricao}</span>` +
+      `<span>${transacao.categoria}</span>` +
+      `<span>${new Date(transacao.data).toLocaleDateString()}</span>` +
+      `<span>${transacao.quantidade.toFixed(2)} €</span>`;
 
-    
-        botaoApagar.addEventListener("click", (event: MouseEvent) => {
-            event.stopPropagation(); 
+    // Botão apagar
+    const botaoApagar = document.createElement("button");
+    botaoApagar.textContent = "x";
+    botaoApagar.classList.add("botao-apagar");
 
-            transacoes.splice(index, 1);
-            salvarTransacoes(transacoes);
-            atualizarDados();
-        });
-
-        transacaoListItem.addEventListener("click", () => {
-            abrirPopUp(transacao, index);
-            console.log("pop-up abrir")
-        });
-
-        transacaoListItem.appendChild(botaoApagar);
-        listaTransacoes.appendChild(transacaoListItem);
+    botaoApagar.addEventListener("click", (event) => {
+      event.stopPropagation();
+      transacoes.splice(index, 1);
+      salvarTransacoes(transacoes);
+      atualizarDados();
     });
+
+    // Abrir popup ao clicar na transação
+    li.addEventListener("click", () => abrirPopUp(transacao, index));
+
+    li.appendChild(botaoApagar);
+    listaTransacoes.appendChild(li);
+  });
 }
 
 
-// Renderiza transações guardadas ao iniciar
-renderizarTransacoes();
+// Adicionar transação
 
-//função para adicionar transação ✔
-function adicionarTransacao(){
-    const descricaoInput = document.getElementById("descricao") as HTMLInputElement;
-    const quantidadeInput = document.getElementById("quantidade") as HTMLInputElement;
+function adicionarTransacao(): void {
+  const descricaoInput = document.getElementById("descricao") as HTMLInputElement;
+  const quantidadeInput = document.getElementById("quantidade") as HTMLInputElement;
 
-    const descricaoValue: string = descricaoInput.value.trim()
-    if (descricaoValue.length < 3) {
-        alert("Escreva de novo, com mínimo 3 letras!");
-        return;
-    } 
-    if (descricaoValue == "") {
-        alert("Escreva algo!");
-        return;
-    }
+  const descricao = descricaoInput.value.trim();
+  const quantidade = Number(quantidadeInput.value);
+  const tipo = tipoTransacaoSelect.value as "receita" | "despesa";
+  const categoria = inputHidden.value;
 
-    const quantidadeValue: number = quantidadeInput.value ;
+  // Validações
+  if (descricao.length < 3) return alert("Escreva de novo, com mínimo 3 letras!");
+  if (isNaN(quantidade) || quantidade <= 0) return alert("Insira um número positivo!");
+  if (tipo !== "receita" && tipo !== "despesa") return alert("Selecione um tipo de transação!");
+  if (!categoria) return alert("Escolha uma categoria!");
 
-    if(quantidadeValue <= 0 || isNaN(quantidadeValue)){
-        alert("Insira um número positivo, maior que zero!");
-        return;            
-    }
+  if (tipo === "receita" && !["Salário", "Outros"].includes(categoria)) {
+    return alert("Para receita, apenas 'Salário' ou 'Outros' são permitidos!");
+  }
+  if (tipo === "despesa" && !["Entretenimento", "Comida", "Faturas", "Lazer", "Outros"].includes(categoria)) {
+    return alert("Para despesa, apenas categorias válidas!");
+  }
 
-    const tipoTransacaoSelecionado: "receita" | "despesa" = tipoTransacaoValue.value as "receita" | "despesa";
+  const novaTransacao: Transacao = {
+    descricao,
+    quantidade,
+    tipo,
+    categoria,
+    data: new Date().toString(),
+  };
 
-    if(!tipoTransacaoSelecionado){
-        alert("Selecione um tipo de transação!");
-        return;
-    }
+  transacoes.push(novaTransacao);
+  salvarTransacoes(transacoes);
+  atualizarDados();
 
-    const categoriaValue: string = inputHidden.value;
-
-    if(!categoriaValue){
-        alert("Escolha uma categoria!");
-        return;
-    }
-
-    if (tipoTransacaoSelecionado === "receita") {
-        const categoriasPermitidas = ["Salário", "Outros"];
-        if (!categoriasPermitidas.includes(categoriaValue)) {
-            alert("Para uma receita, apenas 'Salário' ou 'Outros' são permitidos como categoria!");
-            return; 
-        }
-    }
-
-    if (tipoTransacaoSelecionado === "despesa") {
-        const categoriasPermitidas = ["Entretenimento", "Comida", "Faturas", "Lazer", "Outros"];
-        if (!categoriasPermitidas.includes(categoriaValue)){
-            alert("Para uma despesa, apenas 'Entretenimento', 'Comida', 'Faturas', 'Lazer' ou 'Outros' são permitidos como categoria!");
-            return;
-        }
-    }
-
-    // console.log({
-    //     descricao: descricaoValue,
-    //     quantidade: quantidadeValue,
-    //     tipo: tipoTransacaoSelecionado,
-    //     categoria: categoriaValue
-    // });
-
-    const novaTransacao: Transacao = {
-        descricao: descricaoValue,              
-        quantidade: quantidadeValue,    
-        tipo: tipoTransacaoSelecionado,        
-        categoria: categoriaValue,              
-        data: new Date()                        
-    };
-
-    transacoes.push(novaTransacao);
-    salvarTransacoes(transacoes);
-    renderizarTransacoes();
-
-    //Limpar Inputs
-    descricaoInput.value = "";
-    quantidadeInput.value = "";
-    tipoTransacaoValue.value = "";
-    inputHidden.value = "";
-    categoriaBotao.forEach(botao => {
-        botao.classList.remove("ativa");
-    });
-
-    atualizarDados();
-}
-
-// 2) Escutar clique do botão ✔
-const adicionaHistoria = document.querySelector(".adiciona-historia") as HTMLButtonElement | null;
-if(adicionaHistoria){
-    adicionaHistoria.addEventListener("click",() => {
-        adicionarTransacao();
-    });
-}
-
-const adicionaTransacaoIcon = document.querySelector(".nova-transacao-icon") as HTMLButtonElement | null;
-if(adicionaTransacaoIcon){
-    adicionaTransacaoIcon.addEventListener("click", () => {
-        adicionarTransacao();
-    });
+  // Limpar inputs
+  descricaoInput.value = "";
+  quantidadeInput.value = "";
+  tipoTransacaoSelect.value = "";
+  inputHidden.value = "";
+  categoriaBotoes.forEach((b) => b.classList.remove("ativa"));
 }
 
 
-//função que mostra e atualiza o saldo total, o total de receitas e o total de despesas
+// Eventos de botões
 
-function atualizarDados(){
-    renderizarTransacoes();
+const btnAdicionar = document.querySelector(".adiciona-historia") as HTMLButtonElement;
+btnAdicionar?.addEventListener("click", adicionarTransacao);
 
-    calcularReceitas();
-    calcularDespesas();
-    calcularSaldoTotal();
+const btnAdicionarIcon = document.querySelector(".nova-transacao-icon") as HTMLButtonElement;
+btnAdicionarIcon?.addEventListener("click", adicionarTransacao);
 
-    mostrarReceitas();
-    mostrarDespesas();
-    mostrarSaldoTotal();
+
+// Atualizar dados 
+
+function atualizarDados(): void {
+  renderizarTransacoes();
+  calcularReceitas();
+  calcularDespesas();
+  calcularSaldoTotal();
+  mostrarReceitas();
+  mostrarDespesas();
+  mostrarSaldoTotal();
 }
 
 atualizarDados();
 
-//menu hamburger
 
-const hamburger = document.getElementById("hamburger");
-const sidebar = document.querySelector(".sidebar");
-const overlay = document.getElementById("overlay");
+// Menu hamburger
 
-function toggleMenu() {
-    sidebar.classList.toggle("active");
-    overlay.classList.toggle("active");
+const hamburger = document.getElementById("hamburger") as HTMLElement;
+const sidebar = document.querySelector(".sidebar") as HTMLElement;
+const overlay = document.getElementById("overlay") as HTMLElement;
+
+function toggleMenu(): void {
+  sidebar?.classList.toggle("active");
+  overlay?.classList.toggle("active");
 }
 
-function fecharMenu() {
-    sidebar.classList.remove("active");
-    overlay.classList.remove("active");
+function fecharMenu(): void {
+  sidebar?.classList.remove("active");
+  overlay?.classList.remove("active");
 }
 
-hamburger.addEventListener("click", toggleMenu);
-overlay.addEventListener("click", fecharMenu); //fecha ao clicar no overlay (fora do sidebar)
-
-// Fecha ao clicar num item do menu
-document.querySelectorAll(".menu-itens").forEach(item => {
-    item.addEventListener("click", fecharMenu);
-});
+hamburger?.addEventListener("click", toggleMenu);
+overlay?.addEventListener("click", fecharMenu);
+document.querySelectorAll(".menu-itens").forEach((item) => item.addEventListener("click", fecharMenu));
