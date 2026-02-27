@@ -4,7 +4,7 @@ import { inicializarPopUp } from "./modules/editTransaction.js";
 import { calcularReceitas, calcularDespesas, calcularSaldoTotal, mostrarReceitas, mostrarDespesas, mostrarSaldoTotal} from "./modules/transactions.js";
 
 
-// Captura de elementos
+//Captura de elementos
 
 const tipoTransacaoSelect = document.getElementById("tipo-transacao") as HTMLSelectElement;
 const categoriaBotoes = document.querySelectorAll<HTMLButtonElement>(".categorias");
